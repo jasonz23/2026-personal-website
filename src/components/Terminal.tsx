@@ -14,6 +14,7 @@ import { LINKS } from "@/constants/links";
 import { COMMANDS, COMMAND_NAMES, LOCATIONS } from "@/constants/commands";
 import { getNode, resolvePath } from "@/constants/fileSystem";
 import { useTheme } from "@/hooks/useTheme";
+import { parseLinks } from "@/utils/parseLinks";
 
 // ==================== TYPES ====================
 
@@ -441,7 +442,10 @@ export default function Terminal({
                 </div>
               )}
               <pre className="text-term-text whitespace-pre-wrap">
-                {catNode.content}
+                {parseLinks(
+                  catNode.content || "",
+                  "text-term-cyan underline underline-offset-2 hover:opacity-80 transition-opacity",
+                )}
               </pre>
 
               {catNode.downloadUrl && (
@@ -789,7 +793,10 @@ export default function Terminal({
               id: getId(),
               content: (
                 <pre className="text-term-text whitespace-pre-wrap">
-                  {node.content}
+                  {parseLinks(
+                    node.content,
+                    "text-term-cyan underline underline-offset-2 hover:opacity-80 transition-opacity",
+                  )}
                 </pre>
               ),
             });
@@ -810,7 +817,10 @@ export default function Terminal({
               id: getId(),
               content: (
                 <pre className="text-term-text whitespace-pre-wrap">
-                  {node.children["README.md"].content}
+                  {parseLinks(
+                    node.children["README.md"].content || "",
+                    "text-term-cyan underline underline-offset-2 hover:opacity-80 transition-opacity",
+                  )}
                 </pre>
               ),
             });

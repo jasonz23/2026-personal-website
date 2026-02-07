@@ -1,6 +1,7 @@
 "use client";
 
 import { getNode, type DownloadLink } from "@/constants/fileSystem";
+import { parseLinks } from "@/utils/parseLinks";
 
 interface AboutPanelProps {
   activePath: string;
@@ -59,6 +60,9 @@ function getContentForPath(path: string): {
   return { content: getNode("~/about-me/README.md")?.content || "" };
 }
 
+const linkClass =
+  "text-[var(--grid-accent)] underline underline-offset-2 hover:opacity-80 transition-opacity";
+
 function renderContent(text: string) {
   const lines = text.split("\n");
   return lines.map((line, i) => {
@@ -68,7 +72,7 @@ function renderContent(text: string) {
           key={i}
           className="text-[var(--grid-accent)] text-lg font-bold mb-3 tracking-wide"
         >
-          {line.slice(2)}
+          {parseLinks(line.slice(2), linkClass)}
         </h2>
       );
     }
@@ -78,7 +82,7 @@ function renderContent(text: string) {
           key={i}
           className="text-[var(--grid-accent)] text-sm font-bold mt-4 mb-2 tracking-wider uppercase"
         >
-          {line.slice(3)}
+          {parseLinks(line.slice(3), linkClass)}
         </h3>
       );
     }
@@ -89,7 +93,7 @@ function renderContent(text: string) {
             &#9654;
           </span>
           <span className="text-foreground text-sm">
-            {line.trimStart().slice(2)}
+            {parseLinks(line.trimStart().slice(2), linkClass)}
           </span>
         </div>
       );
@@ -99,7 +103,7 @@ function renderContent(text: string) {
     }
     return (
       <p key={i} className="text-foreground text-sm leading-relaxed">
-        {line}
+        {parseLinks(line, linkClass)}
       </p>
     );
   });

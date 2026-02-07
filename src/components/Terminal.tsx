@@ -5,6 +5,7 @@ import {
   useRef,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
   type KeyboardEvent,
   type MutableRefObject,
@@ -29,6 +30,111 @@ interface TerminalProps {
   onCwdChange?: (cwd: string) => void;
 }
 
+// ==================== AUTOCOMPLETE ====================
+
+interface Suggestion {
+  display: string;
+  value: string;
+  description?: string;
+}
+
+const COMMAND_DESCRIPTIONS: Record<string, string> = Object.fromEntries(
+  COMMANDS.map(([cmd, desc]) => [cmd.split(/\s/)[0], desc]),
+);
+
+const OPEN_TARGETS = LINKS.filter((l) => l.external).map((l) => ({
+  name: l.name.toLowerCase(),
+  label: l.name,
+  href: l.href!,
+}));
+
+function getSuggestions(input: string, cwd: string): Suggestion[] {
+  const trimmed = input.trimStart();
+  if (!trimmed) return [];
+
+  const parts = trimmed.split(/\s+/);
+  const command = parts[0].toLowerCase();
+
+  // Typing the first word — complete command names
+  if (parts.length === 1) {
+    return COMMAND_NAMES.filter(
+      (c) => c.startsWith(command) && c !== command,
+    ).map((c) => ({
+      display: c,
+      value: c + " ",
+      description: COMMAND_DESCRIPTIONS[c],
+    }));
+  }
+
+  const argPart = parts.slice(1).join(" ");
+
+  // open <target>
+  if (command === "open") {
+    return OPEN_TARGETS.filter(
+      (t) =>
+        t.name.startsWith(argPart.toLowerCase()) &&
+        t.name !== argPart.toLowerCase(),
+    ).map((t) => ({
+      display: t.label,
+      value: `open ${t.name}`,
+      description: t.href,
+    }));
+  }
+
+  // theme <mode>
+  if (command === "theme") {
+    return ["light", "dark"]
+      .filter(
+        (m) =>
+          m.startsWith(argPart.toLowerCase()) && m !== argPart.toLowerCase(),
+      )
+      .map((m) => ({
+        display: m,
+        value: `theme ${m}`,
+      }));
+  }
+
+  // cd / ls / cat — filesystem completion
+  if (["cd", "ls", "cat"].includes(command)) {
+    const partial = parts[parts.length - 1];
+    let dirPath: string;
+    let prefix: string;
+    let pathPrefix: string;
+
+    if (partial.includes("/")) {
+      const lastSlash = partial.lastIndexOf("/");
+      dirPath = resolvePath(cwd, partial.substring(0, lastSlash) || "/");
+      prefix = partial.substring(lastSlash + 1);
+      pathPrefix = partial.substring(0, lastSlash + 1);
+    } else {
+      dirPath = cwd;
+      prefix = partial;
+      pathPrefix = "";
+    }
+
+    const node = getNode(dirPath);
+    if (node?.type === "dir" && node.children) {
+      return Object.entries(node.children)
+        .filter(([name]) => name.toLowerCase().startsWith(prefix.toLowerCase()))
+        .filter(([name]) => name.toLowerCase() !== prefix.toLowerCase())
+        .filter(([, child]) => {
+          if (command === "cd") return child.type === "dir";
+          if (command === "cat") return child.type === "file";
+          return true;
+        })
+        .map(([name, child]) => {
+          const suffix = child.type === "dir" ? "/" : "";
+          return {
+            display: name + suffix,
+            value: `${command} ${pathPrefix}${name}${suffix}`,
+          };
+        });
+    }
+  }
+
+  return [];
+}
+
 // ==================== COMPONENT ====================
 
 export default function Terminal({
@@ -42,6 +148,7 @@ export default function Terminal({
   const [cmdHistory, setCmdHistory] = useState<string[]>([]);
   const [histIdx, setHistIdx] = useState(-1);
   const [isTyping, setIsTyping] = useState(false);
+  const [acIdx, setAcIdx] = useState(0);
 
   const nextId = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +164,18 @@ export default function Terminal({
   const { theme, toggle: toggleTheme } = useTheme();
   const themeRef = useRef({ theme, toggle: toggleTheme });
   themeRef.current = { theme, toggle: toggleTheme };
+
+  const suggestions = useMemo(() => {
+    if (isTyping || histIdx !== -1) return [];
+    return getSuggestions(input, cwd);
+  }, [input, cwd, isTyping, histIdx]);
+
+  // Reset selection when suggestions change
+  const prevSugLen = useRef(0);
+  if (suggestions.length !== prevSugLen.current) {
+    prevSugLen.current = suggestions.length;
+    if (acIdx >= suggestions.length) setAcIdx(0);
+  }
 
   // Keep refs in sync and notify parent of CWD changes
   useEffect(() => {
@@ -464,6 +583,33 @@ export default function Terminal({
         break;
       }
 
+      case "open": {
+        if (!args) {
+          output = (
+            <div className="text-term-error">
+              open: missing target. Available:{" "}
+              {OPEN_TARGETS.map((t) => t.name).join(", ")}
+            </div>
+          );
+          break;
+        }
+        const target = OPEN_TARGETS.find((t) => t.name === args.toLowerCase());
+        if (!target) {
+          output = (
+            <div className="text-term-error">
+              open: unknown target {`'${args}'`}. Available:{" "}
+              {OPEN_TARGETS.map((t) => t.name).join(", ")}
+            </div>
+          );
+        } else {
+          window.open(target.href, "_blank", "noopener,noreferrer");
+          output = (
+            <div className="text-term-text">Opening {target.label}...</div>
+          );
+        }
+        break;
+      }
+
       case "pwd": {
         output = (
           <div className="text-term-text">
@@ -669,56 +815,13 @@ export default function Terminal({
   // Keep link nav ref updated
   linkNavRef.current = handleLinkNav;
 
-  // ---- Tab Completion ----
+  // ---- Accept Autocomplete Suggestion ----
 
-  const handleTabComplete = () => {
-    if (isTyping) return;
-    const parts = input.split(/\s+/);
-    if (parts.length <= 1 && parts[0]) {
-      const matches = COMMAND_NAMES.filter((c) =>
-        c.startsWith(parts[0].toLowerCase()),
-      );
-      if (matches.length === 1) {
-        setInput(matches[0] + " ");
-      }
-    } else if (parts.length >= 2) {
-      const partial = parts[parts.length - 1];
-      let dirPath: string;
-      let prefix: string;
-
-      if (partial.includes("/")) {
-        const lastSlash = partial.lastIndexOf("/");
-        dirPath = resolvePath(
-          cwdRef.current,
-          partial.substring(0, lastSlash) || "/",
-        );
-        prefix = partial.substring(lastSlash + 1);
-      } else {
-        dirPath = cwdRef.current;
-        prefix = partial;
-      }
-
-      const node = getNode(dirPath);
-      if (node?.type === "dir" && node.children) {
-        const matches = Object.keys(node.children).filter((name) =>
-          name.toLowerCase().startsWith(prefix.toLowerCase()),
-        );
-        if (matches.length === 1) {
-          const completed = matches[0];
-          const isDir = node.children[completed].type === "dir";
-          const newParts = [...parts];
-          if (partial.includes("/")) {
-            const lastSlash = partial.lastIndexOf("/");
-            newParts[newParts.length - 1] =
-              partial.substring(0, lastSlash + 1) +
-              completed +
-              (isDir ? "/" : "");
-          } else {
-            newParts[newParts.length - 1] = completed + (isDir ? "/" : "");
-          }
-          setInput(newParts.join(" "));
-        }
-      }
+  const acceptSuggestion = (idx: number) => {
+    if (suggestions[idx]) {
+      setInput(suggestions[idx].value);
+      setAcIdx(0);
+      inputRef.current?.focus();
     }
   };
 
@@ -729,39 +832,75 @@ export default function Terminal({
       e.preventDefault();
       return;
     }
+
+    const hasSuggestions = suggestions.length > 0;
+
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (hasSuggestions) {
+        acceptSuggestion(acIdx);
+      }
+      return;
+    }
+
     if (e.key === "Enter") {
       e.preventDefault();
       handleSubmit();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const history = cmdHistoryRef.current;
-      if (history.length === 0) return;
-      const newIdx =
-        histIdx === -1 ? history.length - 1 : Math.max(0, histIdx - 1);
-      setHistIdx(newIdx);
-      setInput(history[newIdx]);
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (histIdx === -1) return;
-      const history = cmdHistoryRef.current;
-      const newIdx = histIdx + 1;
-      if (newIdx >= history.length) {
-        setHistIdx(-1);
+      setAcIdx(0);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      if (hasSuggestions) {
+        e.preventDefault();
         setInput("");
+        setAcIdx(0);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (hasSuggestions) {
+        setAcIdx((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
       } else {
+        const history = cmdHistoryRef.current;
+        if (history.length === 0) return;
+        const newIdx =
+          histIdx === -1 ? history.length - 1 : Math.max(0, histIdx - 1);
         setHistIdx(newIdx);
         setInput(history[newIdx]);
       }
-    } else if (e.key === "c" && e.ctrlKey) {
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (hasSuggestions) {
+        setAcIdx((prev) => (prev >= suggestions.length - 1 ? 0 : prev + 1));
+      } else {
+        if (histIdx === -1) return;
+        const history = cmdHistoryRef.current;
+        const newIdx = histIdx + 1;
+        if (newIdx >= history.length) {
+          setHistIdx(-1);
+          setInput("");
+        } else {
+          setHistIdx(newIdx);
+          setInput(history[newIdx]);
+        }
+      }
+      return;
+    }
+
+    if (e.key === "c" && e.ctrlKey) {
       e.preventDefault();
       setLines([]);
       setInput("");
+      setAcIdx(0);
     } else if (e.key === "l" && e.ctrlKey) {
       e.preventDefault();
       setLines([]);
-    } else if (e.key === "Tab") {
-      e.preventDefault();
-      handleTabComplete();
     }
   };
 
@@ -851,23 +990,60 @@ export default function Terminal({
           </div>
         ))}
 
-        {/* Input line */}
-        <div className="flex items-center leading-relaxed min-w-0">
-          {renderPrompt(cwd)}
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => {
-              if (!isTyping) setInput(e.target.value);
-            }}
-            onKeyDown={handleKeyDown}
-            className="bg-transparent outline-none border-none text-term-cmd flex-1 ml-1 caret-term-text font-mono text-xs sm:text-sm md:text-base w-0 min-w-0"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            readOnly={isTyping}
-          />
+        {/* Input line + autocomplete */}
+        <div className="relative">
+          <div className="flex items-center leading-relaxed min-w-0">
+            {renderPrompt(cwd)}
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => {
+                if (!isTyping) {
+                  setInput(e.target.value);
+                  setHistIdx(-1);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              className="bg-transparent outline-none border-none text-term-cmd flex-1 ml-1 caret-term-text font-mono text-xs sm:text-sm md:text-base w-0 min-w-0"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              readOnly={isTyping}
+            />
+          </div>
+
+          {/* Autocomplete dropdown */}
+          {suggestions.length > 0 && (
+            <div className="absolute left-0 top-full z-10 ml-4 sm:ml-6 mt-1 border border-[var(--grid-accent-dim)] bg-[var(--grid-panel-bg)] max-w-xs shadow-lg">
+              {suggestions.slice(0, 6).map((s, i) => (
+                <button
+                  key={s.value}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    acceptSuggestion(i);
+                  }}
+                  className={`w-full text-left px-2 py-1 flex items-center gap-3 text-xs sm:text-sm cursor-pointer transition-colors ${
+                    i === acIdx
+                      ? "bg-[var(--grid-accent-dim)] text-[var(--grid-accent)]"
+                      : "text-term-text hover:bg-[var(--grid-accent-dim)]"
+                  }`}
+                >
+                  <span className="text-term-cyan font-mono shrink-0">
+                    {s.display}
+                  </span>
+                  {s.description && (
+                    <span className="text-term-dim truncate text-xs">
+                      {s.description}
+                    </span>
+                  )}
+                </button>
+              ))}
+              <div className="px-2 py-0.5 text-[10px] text-term-dim border-t border-[var(--grid-accent-dim)]">
+                Tab to complete · ↑↓ to navigate
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

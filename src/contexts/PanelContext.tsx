@@ -3,13 +3,10 @@
 import { useState, useCallback, type ReactNode } from "react";
 import { PanelContext } from "@/hooks/usePanels";
 
+const ALL_PANELS = ["wave", "readme", "links", "terminal"];
+
 export default function PanelProvider({ children }: { children: ReactNode }) {
-  const [openPanels, setOpenPanels] = useState<string[]>([
-    "readme",
-    "wave",
-    "terminal",
-    "links",
-  ]);
+  const [openPanels, setOpenPanels] = useState<string[]>([]);
 
   const focusPanel = useCallback((panel: string) => {
     setOpenPanels([panel]);
@@ -19,9 +16,26 @@ export default function PanelProvider({ children }: { children: ReactNode }) {
     setOpenPanels((prev) => (prev.includes(panel) ? prev : [...prev, panel]));
   }, []);
 
+  const revealPanels = useCallback(() => {
+    ALL_PANELS.forEach((panel, i) => {
+      setTimeout(
+        () => {
+          setOpenPanels((prev) => [...prev, panel]);
+        },
+        400 + i * 150,
+      );
+    });
+  }, []);
+
   return (
     <PanelContext.Provider
-      value={{ openPanels, setOpenPanels, focusPanel, ensureOpen }}
+      value={{
+        openPanels,
+        setOpenPanels,
+        focusPanel,
+        ensureOpen,
+        revealPanels,
+      }}
     >
       {children}
     </PanelContext.Provider>

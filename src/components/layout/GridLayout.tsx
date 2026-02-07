@@ -114,16 +114,24 @@ export default function GridLayout() {
           type="multiple"
           value={rightOpen}
           onValueChange={handleRightChange}
-          className="flex flex-col gap-[2px] md:flex-1 md:min-h-0 min-w-0"
+          className="flex flex-col gap-0.5 md:flex-1 md:min-h-0 min-w-0"
         >
-          <GridPanel value="terminal" title="TERMINAL // BASH" rightLabel="ACTIVE">
+          <GridPanel
+            value="terminal"
+            title="TERMINAL // BASH"
+            rightLabel="ACTIVE"
+          >
             <TerminalPanel
               onCommandRef={terminalCommandRef}
               initialCwd={mounted ? initialPath : "~"}
               onCwdChange={handlePathChange}
             />
           </GridPanel>
-          <GridPanel value="links" title="NAVIGATION // LINKS" rightLabel="DIRECTORY">
+          <GridPanel
+            value="links"
+            title="NAVIGATION // LINKS"
+            rightLabel="DIRECTORY"
+          >
             <LinksPanel
               onNavigate={handleSendCommand}
               onTypingChange={setTypingCmd}

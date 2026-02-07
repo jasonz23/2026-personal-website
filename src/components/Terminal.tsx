@@ -316,7 +316,7 @@ export default function Terminal({
 
   const renderTitle = () => (
     <div className="mb-2">
-      <pre className="text-term-cyan text-[10px] sm:text-sm leading-tight font-mono overflow-x-auto flex flex-col">
+      <pre className="text-term-cyan text-[10px] sm:text-sm leading-tight font-mono  flex flex-col">
         {ASCII_TITLE.map((line, i) => (
           <div key={`${i}-ascii-title`}>{line}</div>
         ))}

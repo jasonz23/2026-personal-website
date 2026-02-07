@@ -11,7 +11,11 @@ const TIMINGS = {
   fadeDuration: 500,
 };
 
-export default function LoadingSequence() {
+interface LoadingSequenceProps {
+  onComplete?: () => void;
+}
+
+export default function LoadingSequence({ onComplete }: LoadingSequenceProps) {
   const [phase, setPhase] = useState<Phase>("black");
   const [progress, setProgress] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -24,6 +28,7 @@ export default function LoadingSequence() {
     if (prefersReduced) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("complete");
+      onComplete?.();
       return;
     }
 
@@ -34,7 +39,10 @@ export default function LoadingSequence() {
       TIMINGS.blackDuration + TIMINGS.drawDuration,
     );
     const t3 = setTimeout(
-      () => setPhase("fading"),
+      () => {
+        setPhase("fading");
+        onComplete?.();
+      },
       TIMINGS.blackDuration + TIMINGS.drawDuration + TIMINGS.loadDuration,
     );
     const t4 = setTimeout(

@@ -7,6 +7,7 @@ export interface PanelContextValue {
   setOpenPanels: (panels: string[]) => void;
   focusPanel: (panel: string) => void;
   ensureOpen: (panel: string) => void;
+  revealPanels: () => void;
 }
 
 export const PanelContext = createContext<PanelContextValue>({
@@ -14,6 +15,7 @@ export const PanelContext = createContext<PanelContextValue>({
   setOpenPanels: () => {},
   focusPanel: () => {},
   ensureOpen: () => {},
+  revealPanels: () => {},
 });
 
 export function usePanels() {

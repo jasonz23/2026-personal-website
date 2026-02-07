@@ -10,6 +10,7 @@ import TerminalPanel from "@/components/panels/TerminalPanel";
 import WavePanel from "@/components/panels/WavePanel";
 import LinksPanel from "@/components/panels/LinksPanel";
 import { usePanels } from "@/hooks/usePanels";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 function pathToQuery(cwd: string): string {
   if (cwd === "~") return "";
@@ -39,6 +40,18 @@ export default function GridLayout() {
   const [mounted, setMounted] = useState(false);
   const [typingCmd, setTypingCmd] = useState<string | null>(null);
   const { openPanels, setOpenPanels } = usePanels();
+  const mainRef = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
+  const isMobileRef = useRef(false);
+  useEffect(() => {
+    isMobileRef.current = isMobile;
+  }, [isMobile]);
+
+  const scrollToTop = useCallback(() => {
+    if (isMobileRef.current && mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
 
   const leftOpen = openPanels.filter((p) => LEFT_PANELS.includes(p));
   const rightOpen = openPanels.filter((p) => RIGHT_PANELS.includes(p));
@@ -95,15 +108,23 @@ export default function GridLayout() {
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[var(--background)]">
-      <HeaderBar />
-      <main className="flex-1 min-h-0 min-w-0 flex flex-col md:flex-row gap-[2px] p-1 sm:p-2 md:p-3 bg-[var(--grid-accent-dim)] overflow-y-auto md:overflow-hidden">
+      <HeaderBar onNavigate={handleSendCommand} onTypingChange={setTypingCmd} />
+      <main
+        ref={mainRef}
+        className="flex-1 min-h-0 min-w-0 flex flex-col md:flex-row gap-[2px] p-1 sm:p-2 md:p-3 bg-[var(--grid-accent-dim)] overflow-y-auto md:overflow-hidden"
+      >
         <Accordion.Root
           type="multiple"
           value={leftOpen}
           onValueChange={handleLeftChange}
           className="flex flex-col gap-[2px] md:flex-1 md:min-h-0 min-w-0"
         >
-          <GridPanel value="readme" title="README.TXT" rightLabel={panelLabel}>
+          <GridPanel
+            value="readme"
+            title="README.TXT"
+            rightLabel={panelLabel}
+            className="max-h-[60vh] md:max-h-none"
+          >
             <AboutPanel activePath={activePath} />
           </GridPanel>
           <GridPanel value="wave" title="WEBGL.WAVE" rightLabel="DATALINK">
@@ -120,11 +141,13 @@ export default function GridLayout() {
             value="terminal"
             title="TERMINAL // BASH"
             rightLabel="ACTIVE"
+            className="max-h-[60vh] md:max-h-none"
           >
             <TerminalPanel
               onCommandRef={terminalCommandRef}
               initialCwd={mounted ? initialPath : "~"}
               onCwdChange={handlePathChange}
+              onCommandComplete={scrollToTop}
             />
           </GridPanel>
           <GridPanel

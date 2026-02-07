@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import HeaderMenu from "./HeaderMenu";
 
-export default function HeaderBar() {
+interface HeaderBarProps {
+  onNavigate?: (cmd: string) => void;
+  onTypingChange?: (cmd: string | null) => void;
+}
+
+export default function HeaderBar({ onNavigate, onTypingChange }: HeaderBarProps) {
   const [time, setTime] = useState("");
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function HeaderBar() {
         <span className="opacity-60 hidden sm:inline">...</span>
         <span className="font-mono opacity-80 tabular-nums">{time}</span>
         <ThemeToggle />
-        <HeaderMenu />
+        <HeaderMenu onNavigate={onNavigate} onTypingChange={onTypingChange} />
       </div>
     </div>
   );

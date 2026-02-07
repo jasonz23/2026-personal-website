@@ -28,6 +28,7 @@ interface TerminalProps {
   onCommandRef?: MutableRefObject<((cmd: string) => void) | null>;
   initialCwd?: string;
   onCwdChange?: (cwd: string) => void;
+  onCommandComplete?: () => void;
 }
 
 // ==================== AUTOCOMPLETE ====================
@@ -141,6 +142,7 @@ export default function Terminal({
   onCommandRef,
   initialCwd = "~",
   onCwdChange,
+  onCommandComplete,
 }: TerminalProps) {
   const [lines, setLines] = useState<TerminalLine[]>([]);
   const [input, setInput] = useState("");
@@ -160,6 +162,8 @@ export default function Terminal({
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCwdChangeRef = useRef(onCwdChange);
   onCwdChangeRef.current = onCwdChange;
+  const onCommandCompleteRef = useRef(onCommandComplete);
+  onCommandCompleteRef.current = onCommandComplete;
 
   const { theme, toggle: toggleTheme } = useTheme();
   const themeRef = useRef({ theme, toggle: toggleTheme });
@@ -284,6 +288,7 @@ export default function Terminal({
     setInput("");
     setHistIdx(-1);
     inputRef.current?.focus();
+    onCommandCompleteRef.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -91,6 +91,35 @@ export function useWaveGL(
     observer.observe(container);
     handleResize();
 
+    // Mouse interaction
+    const mouse = new THREE.Vector2();
+    const mouseWorldPos = new THREE.Vector3();
+    const raycaster = new THREE.Raycaster();
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const rayTarget = new THREE.Vector3();
+    let mouseActive = false;
+    let mouseInfluence = 0;
+
+    const updateMouse = (clientX: number, clientY: number) => {
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      mouseActive = true;
+    };
+
+    const onMouseMove = (e: MouseEvent) => updateMouse(e.clientX, e.clientY);
+    const onMouseLeave = () => { mouseActive = false; };
+    const onTouchMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (t) updateMouse(t.clientX, t.clientY);
+    };
+    const onTouchEnd = () => { mouseActive = false; };
+
+    container.addEventListener("mousemove", onMouseMove);
+    container.addEventListener("mouseleave", onMouseLeave);
+    container.addEventListener("touchmove", onTouchMove, { passive: true });
+    container.addEventListener("touchend", onTouchEnd);
+
     // Animation
     let time = 0;
     let lastVisible = true;
@@ -109,17 +138,43 @@ export function useWaveGL(
 
       time += 0.015;
 
+      // Smooth mouse influence fade in/out
+      mouseInfluence += ((mouseActive ? 1 : 0) - mouseInfluence) * 0.08;
+
+      // Update mouse world position via raycast
+      if (mouseInfluence > 0.01) {
+        raycaster.setFromCamera(mouse, camera);
+        if (raycaster.ray.intersectPlane(groundPlane, rayTarget)) {
+          mouseWorldPos.lerp(rayTarget, 0.15);
+        }
+      }
+
       const pos = geometry.attributes.position.array as Float32Array;
       const original = positionsRef.current!;
 
       for (let i = 0; i < pos.length; i += 3) {
         const ox = original[i];
         const oz = original[i + 2];
-        pos[i + 1] =
+
+        // Base wave
+        let y =
           Math.sin(ox * 0.5 + time) *
           Math.cos(oz * 0.6 + time * 0.8) *
           0.8 +
           Math.sin(ox * 0.3 - time * 0.5) * 0.4;
+
+        // Mouse ripple
+        if (mouseInfluence > 0.01) {
+          const dx = ox - mouseWorldPos.x;
+          const dz = oz - mouseWorldPos.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          const bump = Math.exp(-dist * dist * 0.3) * 1.2;
+          const ripple =
+            Math.sin(dist * 3 - time * 5) * Math.exp(-dist * 0.5) * 0.4;
+          y += (bump + ripple) * mouseInfluence;
+        }
+
+        pos[i + 1] = y;
       }
 
       geometry.attributes.position.needsUpdate = true;
@@ -131,6 +186,10 @@ export function useWaveGL(
     return () => {
       cancelAnimationFrame(frameRef.current);
       observer.disconnect();
+      container.removeEventListener("mousemove", onMouseMove);
+      container.removeEventListener("mouseleave", onMouseLeave);
+      container.removeEventListener("touchmove", onTouchMove);
+      container.removeEventListener("touchend", onTouchEnd);
       geometry.dispose();
       material.dispose();
       renderer.dispose();

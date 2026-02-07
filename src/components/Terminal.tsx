@@ -807,7 +807,7 @@ export default function Terminal({
               if (!isTyping) setInput(e.target.value);
             }}
             onKeyDown={handleKeyDown}
-            className="bg-transparent outline-none border-none text-term-cmd flex-1 ml-0.5 caret-term-text font-mono text-xs sm:text-sm md:text-base w-0 min-w-0"
+            className="bg-transparent outline-none border-none text-term-cmd flex-1 ml-1 caret-term-text font-mono text-xs sm:text-sm md:text-base w-0 min-w-0"
             autoFocus
             autoComplete="off"
             autoCorrect="off"

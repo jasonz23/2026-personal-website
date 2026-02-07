@@ -75,9 +75,9 @@ export default function Terminal({
     }
   }, [lines, input]);
 
-  // Focus input on mount
+  // Focus input on mount (preventScroll so mobile stays at top)
   useEffect(() => {
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   // Cleanup typing interval on unmount
@@ -852,7 +852,6 @@ export default function Terminal({
             }}
             onKeyDown={handleKeyDown}
             className="bg-transparent outline-none border-none text-term-cmd flex-1 ml-1 caret-term-text font-mono text-xs sm:text-sm md:text-base w-0 min-w-0"
-            autoFocus
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"

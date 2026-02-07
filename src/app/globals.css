@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0f2f5;
+  --foreground: #374151;
+
+  --term-bg: #f0f2f5;
+  --term-text: #374151;
+  --term-muted: #6b7280;
+  --term-dim: #9ca3af;
+  --term-green: #16a34a;
+  --term-accent: #1e40af;
+  --term-cyan: #0891b2;
+  --term-cmd: #0e7490;
+  --term-error: #dc2626;
+  --term-yellow: #a16207;
+  --term-blue: #2563eb;
+  --term-accent-dim: rgba(30, 64, 175, 0.25);
+  --term-shadow: rgba(30, 64, 175, 0.15);
+
+  --grid-accent: #1e40af;
+  --grid-accent-dim: rgba(30, 64, 175, 0.2);
+  --grid-accent-glow: rgba(30, 64, 175, 0.1);
+  --grid-panel-bg: #ffffff;
+  --grid-header-bg: #1e3a5f;
+  --grid-header-text: #e2e8f0;
+  --grid-status-bg: #f8fafc;
+  --grid-status-text: #64748b;
+  --header-text: #e2e8f0;
+}
+
+.dark {
+  --background: #0a0f1c;
+  --foreground: #e2e8f0;
+
+  --term-bg: #0a0f1c;
+  --term-text: #d1d5db;
+  --term-muted: #9ca3af;
+  --term-dim: #6b7280;
+  --term-green: #4ade80;
+  --term-accent: #22d3ee;
+  --term-cyan: #22d3ee;
+  --term-cmd: #67e8f9;
+  --term-error: #f87171;
+  --term-yellow: #facc15;
+  --term-blue: #60a5fa;
+  --term-accent-dim: rgba(34, 211, 238, 0.3);
+  --term-shadow: rgba(34, 211, 238, 0.2);
+
+  --grid-accent: #22d3ee;
+  --grid-accent-dim: rgba(34, 211, 238, 0.2);
+  --grid-accent-glow: rgba(34, 211, 238, 0.15);
+  --grid-panel-bg: #0f172a;
+  --grid-header-bg: #0f172a;
+  --grid-header-text: #e2e8f0;
+  --grid-status-bg: #0f172a;
+  --grid-status-text: #64748b;
+  --header-text: #e2e8f0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --color-term-bg: var(--term-bg);
+  --color-term-text: var(--term-text);
+  --color-term-muted: var(--term-muted);
+  --color-term-dim: var(--term-dim);
+  --color-term-green: var(--term-green);
+  --color-term-accent: var(--term-accent);
+  --color-term-cyan: var(--term-cyan);
+  --color-term-cmd: var(--term-cmd);
+  --color-term-error: var(--term-error);
+  --color-term-yellow: var(--term-yellow);
+  --color-term-blue: var(--term-blue);
+  --color-term-accent-dim: var(--term-accent-dim);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--term-accent-dim);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--term-accent);
+}
+
+/* Selection */
+::selection {
+  background: var(--term-accent-dim);
+  color: var(--foreground);
+}
+
+/* Loading animation keyframes */
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: var(--dash-length);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fillBar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes panelReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

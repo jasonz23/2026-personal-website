@@ -27,7 +27,7 @@ export default function HeaderMenu() {
   }, [open]);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative md:hidden" ref={menuRef}>
       <button
         onClick={() => setOpen((prev) => !prev)}
         className="w-8 h-8 flex items-center justify-center border border-(--grid-accent) text-(--header-text) hover:bg-(--grid-accent-dim) transition-colors cursor-pointer"

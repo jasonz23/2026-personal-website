@@ -13,6 +13,7 @@ import { ASCII_TITLE } from "@/constants/ascii";
 import { LINKS } from "@/constants/links";
 import { COMMANDS, COMMAND_NAMES, LOCATIONS } from "@/constants/commands";
 import { getNode, resolvePath } from "@/constants/fileSystem";
+import { useTheme } from "@/hooks/useTheme";
 
 // ==================== TYPES ====================
 
@@ -51,6 +52,10 @@ export default function Terminal({
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCwdChangeRef = useRef(onCwdChange);
   onCwdChangeRef.current = onCwdChange;
+
+  const { theme, toggle: toggleTheme } = useTheme();
+  const themeRef = useRef({ theme, toggle: toggleTheme });
+  themeRef.current = { theme, toggle: toggleTheme };
 
   // Keep refs in sync and notify parent of CWD changes
   useEffect(() => {
@@ -493,6 +498,45 @@ export default function Terminal({
             ))}
           </div>
         );
+        break;
+      }
+
+      case "theme": {
+        const mode = args.toLowerCase();
+        const current = themeRef.current.theme;
+
+        if (mode === "light" || mode === "dark") {
+          if (mode === current) {
+            output = (
+              <div className="text-term-text">
+                Already in <span className="text-term-cyan">{mode}</span> mode.
+              </div>
+            );
+          } else {
+            themeRef.current.toggle();
+            output = (
+              <div className="text-term-text">
+                Switched to <span className="text-term-cyan">{mode}</span> mode.
+              </div>
+            );
+          }
+        } else if (!mode) {
+          const next = current === "dark" ? "light" : "dark";
+          themeRef.current.toggle();
+          output = (
+            <div className="text-term-text">
+              Switched to <span className="text-term-cyan">{next}</span> mode.
+            </div>
+          );
+        } else {
+          output = (
+            <div className="text-term-error">
+              theme: unknown mode {`'${mode}'`}. Use{" "}
+              <span className="text-term-cyan">light</span> or{" "}
+              <span className="text-term-cyan">dark</span>.
+            </div>
+          );
+        }
         break;
       }
 

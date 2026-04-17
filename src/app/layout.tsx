@@ -11,7 +11,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Jason Zhao | Terminal",
-  description: "Personal website of Jason Zhao - COO at Omnipresent",
+  description: "Personal website of Jason Zhao - CTO/COO at Omnipresent",
 };
 
 export default function RootLayout({

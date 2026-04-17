@@ -327,7 +327,7 @@ export default function Terminal({
         ))}
       </pre>
       <span className="text-term-dim ml-1">v1.0.0</span>
-      <div className="mt-2 text-term-text">COO at Omnipresent | UBC CS</div>
+      <div className="mt-2 text-term-text">CTO/COO at Omnipresent | UBC CS</div>
       <div className="mt-1 text-term-muted text-sm">
         <div>{"Enter 'help' to see list of commands and locations"}</div>
         <div>{"Press 'ctrl + c' to clear the commands"}</div>

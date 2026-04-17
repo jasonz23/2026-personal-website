@@ -22,7 +22,7 @@ export const FILE_SYSTEM: FSNode = {
           content: [
             "# Jason Zhao",
             "",
-            "COO at Omnipresent",
+            "CTO/COO at Omnipresent",
             "",
             "Product-minded engineer and operator with experience",
             "spanning software engineering, product ownership, and",
@@ -102,7 +102,7 @@ export const FILE_SYSTEM: FSNode = {
           content: [
             "# Work Experience",
             "",
-            "## COO - Omnipresent",
+            "## CTO/COO - Omnipresent",
             "   September 2025 - Present | Remote",
             "   Scaled marketing and growth operations by leading a",
             "   cross-functional team of 19 to execute GTM and TGE",
@@ -208,7 +208,7 @@ export const FILE_SYSTEM: FSNode = {
         "",
         "EXPERIENCE",
         "----------",
-        "COO | Omnipresent | Sep 2025 - Present",
+        "CTO/COO | Omnipresent | Sep 2025 - Present",
         "  - Led cross-functional team of 19",
         "  - GTM/TGE launches valued at $100M-$700M+",
         "  - 100M+ impressions, reduced CPM by 24%",
